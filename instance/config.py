@@ -14,7 +14,7 @@ class DevelopmentConfig(Config):
 class TestingConfig(Config):
     """Configurations for Testing, with a separate test database."""
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = 'postgresql://localhost/bucketlist'
+    SQLALCHEMY_DATABASE_URI = 'postgresql://localhost/bucketlist_test'
     DEBUG = True
 
 class StagingConfig(Config):
@@ -26,7 +26,7 @@ class ProductionConfig(Config):
     DEBUG = False
     TESTING = False
 
-app_config = {
+bucketlist_config = {
     'development': DevelopmentConfig,
     'testing': TestingConfig,
     'staging': StagingConfig,

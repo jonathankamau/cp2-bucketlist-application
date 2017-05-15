@@ -26,7 +26,7 @@ class ProductionConfig(Config):
     DEBUG = False
     TESTING = False
 
-app_config = {
+bucketlist_config = {
     'development': DevelopmentConfig,
     'testing': TestingConfig,
     'staging': StagingConfig,

@@ -1,0 +1,29 @@
+[run]
+omit =
+    */tests/*
+    test_*
+    *sqlalchemy/*
+    *werkzeug/*
+    *ctypes/*
+    *encodings/*
+    *jinja2/*
+    *flask/*
+    *click/*
+    *flask_api/*
+    *flask_restful/*
+    *markupsafe/*
+    *psycopg2/*
+    *html/*
+    *http/*
+    *decimal.py
+    *numbers.py
+    *pydoc.py
+    *hmac.py
+    *mimetypes.py
+    *itsdangerous.py
+    *stringprep.py
+    *flask_httpauth.py
+    *jwt/*
+    *uuid.py
+    *models/db/sqlalchemy_declarative.py
+    

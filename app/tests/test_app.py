@@ -1,12 +1,17 @@
 import unittest
 import os
 import sys
+sys.path.append("..")
 import json
+import jwt
 
 from flask import current_app
 from flask_testing import TestCase
+from werkzeug.security import generate_password_hash, check_password_hash
 
-from  app import create_app, db
+from  ...app import create_app, db
+from ..helpers import Helper
+from ..models import User, Bucketlist, BucketlistItems
 
 class BucketlistTests(unittest.TestCase):
     """This class represents the bucketlist test case"""
@@ -16,6 +21,10 @@ class BucketlistTests(unittest.TestCase):
         self.app = create_app(config_name="testing")
         self.client = self.app.test_client
         self.bucketlist = {'name': 'Dance in the moonlight'}
+        self.helper = Helper()
+        self.user = User
+        self.bucketlists = Bucketlist
+        self.bucketlistitems = BucketlistItems
 
         # binds the app to the current context
         with self.app.app_context():
@@ -99,6 +108,44 @@ class BucketlistTests(unittest.TestCase):
         result = self.client().get('/bucketlist_api/v1.0/bucketlists/1')
         self.assertEqual(result.status_code, 404)
 
+    def test_generate_token(self):
+        data = {'username': 'kamjon',
+                'password': 'kamjon123'
+               }
+        secret_key = os.getenv('SECRET') 
+        jwt_string = jwt.encode(data, secret_key)
+
+        token_created = self.helper.generate_token(data)
+        self.assertEqual(jwt_string, token_created, msg='token not the same!')
+
+    def test_get_password(self):
+        data = {'username': 'kamjon',
+                'password': 'kamjon123'
+               }
+        self.client().post('/bucketlist_api/v1.0/auth/login', data=data)
+        hashed_password = generate_password_hash(data['password'])
+        got_password = self.user.get_password
+        self.assertEqual(hashed_password, got_password, msg='Passwords not equal!')
+
+    def test_get_method_return_when_registering_user(self):
+        response = self.client().get('/bucketlist_api/v1.0/auth/register',
+                          data={'firstname':'John',
+                                'lastname': 'Kamau',
+                                'username': 'kamjon',
+                                'password': 'kamjon123'
+                               })
+        actual_response = "To Register please make a POST"
+        self.assertIn(actual_response, str(response.data), msg="Wrong response given")
+
+    def test_user_already_exists(self):
+        data={'firstname':'John',
+              'lastname': 'Kamau',
+              'username': 'kamjon',
+              'password': 'kamjon123'
+             }
+        self.client().post('/bucketlist_api/v1.0/auth/register', data=data)
+        response = self.client().post('/bucketlist_api/v1.0/auth/register', data=data)
+        self.assertEqual(str(response.data), "User already exists!", msg="Does not detect user!")
     def tearDown(self):
         """teardown all initialized variables."""
         with self.app.app_context():

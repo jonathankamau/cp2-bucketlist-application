@@ -1,0 +1,1 @@
+from model_tests.test_model import *

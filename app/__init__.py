@@ -10,7 +10,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 import jwt
 
-from ..app.config import bucketlist_config
+from app.config import bucketlist_config
 
 
 db = SQLAlchemy()
@@ -18,8 +18,8 @@ auth = HTTPBasicAuth()
 
 
 def create_app(config_name):
-    from ..app.models import User, Bucketlist, BucketlistItems
-    from ..app.resources import (RegisterUser, UserLogin, UserLogout,
+    from app.models import User, Bucketlist, BucketlistItems
+    from app.resources import (RegisterUser, UserLogin, UserLogout,
                                  AddBucketlist, AddBucketlistItem, UpdateBucketlist)
 
     app = FlaskAPI(__name__, instance_relative_config=True)
@@ -36,8 +36,8 @@ def create_app(config_name):
     # urls
     api.add_resource(
         RegisterUser, '/bucketlist_api/v1.0/auth/register', endpoint='register')
-   # api.add_resource(
-     #   UserLogin, '/bucketlist_api/v1.0/auth/login', endpoint='login')
+    api.add_resource(
+        UserLogin, '/bucketlist_api/v1.0/auth/login', endpoint='login')
     api.add_resource(
         UserLogout, '/bucketlist_api/v1.0/auth/logout', endpoint='logout')
     api.add_resource(

@@ -3,3 +3,6 @@ __pycache__/
 migrations
 .coverage
 cover/
+instance/test_app.py
+.gitconfig
+app/helpers.py

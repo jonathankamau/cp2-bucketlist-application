@@ -1,7 +1,10 @@
 import datetime
+import os
 
-from ..app import db
+from app import db
 from werkzeug.security import generate_password_hash, check_password_hash
+from itsdangerous import (TimedJSONWebSignatureSerializer
+                          as Serializer, BadSignature, SignatureExpired)
 
 
 class User(db.Model):
@@ -42,6 +45,22 @@ class User(db.Model):
     def save(self):
         db.session.add(self)
         db.session.commit()
+
+    def generate_token(self, expiration=600):
+        serial = Serializer(os.getenv('SECRET'), expires_in=expiration)
+        return serial.dumps({'id': self.user_id})
+
+    @staticmethod
+    def verify_token(self, token):
+        serial = Serializer(os.getenv('SECRET'))
+        try:
+            data = serial.loads(token)
+        except SignatureExpired:
+            return "Expired Token!" # valid token, but expired
+        except BadSignature:
+            return "Invalid Token" # invalid token
+        user = User.query.get(data['id'])
+        return user
 
 class Session(db.Model):
     """Maps to session table """

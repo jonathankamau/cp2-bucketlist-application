@@ -5,8 +5,8 @@ from flask_restful import reqparse, Resource, Api
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth
 from flask import request, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy
-from ..app.models import User, Bucketlist, BucketlistItems
-from ..app.helpers import Helper
+from app.models import User, Bucketlist, BucketlistItems
+from app.helpers import Helper
 
 db = SQLAlchemy()
 auth = HTTPBasicAuth()
@@ -28,7 +28,6 @@ class RegisterUser(Resource):
         super(RegisterUser, self).__init__()
 
     def get(self):
-        if request.method == 'GET':
             response = ("Welcome to BucketList! To Register, "
                         "please make a POST /bucketlist_api/v1.0/auth/register with "
                         "your first and last name, username and password")
@@ -92,12 +91,11 @@ class UserLogin(Resource):
             resp = ' '.join(result)
         else:
             result_user = User.query.filter_by(username=username).first()
-            db.session.remove()
-            if result_user.check_password(password) is True:
-                token = self.generate_token(user)
-                db.session.add(token)
-                db.session.commit(token)
-                resp = "You have logged in successfully"
+            #db.session.remove()
+            if result_user.check_password(password):
+                token = result_user.generate_token()
+                token_response = {'token': token}, 200
+                resp = "You have logged in successfully {}".format(token_response)
             else:
                 resp = "Could not log you in! Check your username and password and try again!"
 

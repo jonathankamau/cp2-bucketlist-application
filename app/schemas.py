@@ -35,7 +35,7 @@ class BucketlistItemsSchema(Schema):
     date_modified = fields.DateTime(dump_only=True)
 
 
-class BucketlistSchema(Schema):
+class BucketlistSchema(ma.ModelSchema):
     name = fields.String(required=True, dump_only=True,
                          error_messages={'required': 'bucketlist name cannot be blank'})
     bucketlist_id = fields.Integer(dump_only=True)
@@ -46,14 +46,13 @@ class BucketlistSchema(Schema):
     date_modified = fields.DateTime(dump_only=True)
     #url = fields.Method('get_url', dump_only=True)
 
-
 class FlaskBucketlistSchema(ma.Schema):
     class Meta:
         ordered = True
         fields = ('name', 'bucketlist_id', 'bucketlist_items',
                   'created_by', 'date_created', 'date_modified')
 
-flask_bucketlist = FlaskBucketlistSchema(many=True)
+#flask_bucketlist = FlaskBucketlistSchema(many=True)
 reg_schema = RegisterUserSchema()
 user_login = UserLoginSchema()
 bucketlist_schema = BucketlistSchema(many=True)

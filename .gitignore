@@ -8,3 +8,5 @@ instance/test_app.py
 app/helpers.py
 .env
 Library/
+tmp/
+instance/config.py

@@ -13,7 +13,8 @@ class DevelopmentConfig(Config):
     """Configurations for Development."""
     DEBUG = True
     FLASK_CONFIG = "development"
-
+    JSON_SORT_KEYS = False
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
 
 class TestingConfig(Config):
     """Configurations for Testing, with a separate test database."""

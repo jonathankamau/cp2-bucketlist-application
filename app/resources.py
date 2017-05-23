@@ -13,7 +13,7 @@ from itsdangerous import (TimedJSONWebSignatureSerializer
                           as Serializer, BadSignature, SignatureExpired)
 
 from app.models import User, Bucketlist, BucketlistItems
-from app.schemas import reg_schema, user_login, bucketlist_schema, flask_bucketlist
+from app.schemas import reg_schema, user_login, bucketlist_schema
 
 db = SQLAlchemy()
 
@@ -76,17 +76,6 @@ class UserLogin(Resource):
         self.reqparse.add_argument('password', type=str,
                                    required=True, help="Last Name not given!")
 
-    # def verify_token(self, token):
-    #     serial = Serializer(os.getenv('SECRET'))
-    #     try:
-    #         data = serial.loads(token)
-    #     except SignatureExpired:
-    #         return "Expired Token!"  # valid token, but expired
-    #     except BadSignature:
-    #         return "Invalid Token"  # invalid token
-    #     user = User.query.get(data['user_id'])
-    #     return user
-
     def get(self):
         return ("Login required! Please make a POST /bucketlist_api/v1.0/auth/login with "
                 "your username and password")
@@ -117,17 +106,6 @@ class UserLogin(Resource):
 
         return resp
 
-
-class UserLogout(Resource):
-    def __init__(self):
-        pass
-
-    def get(self):
-        token = request.headers.get('Authorization')
-        db.session.delete(token)
-        return "You have logged out successfully"
-
-
 class BucketlistAPI(Resource):
     decorators = [auth_token.login_required]
 
@@ -137,7 +115,7 @@ class BucketlistAPI(Resource):
         self.max_limit = 100
         self.request_limit = request.args.get('limit', 2, type=int)
         self.limit = min(self.request_limit, self.max_limit)
-        self.search_term = request.args.get('q', None, type=str)
+        self.search_term = request.args.get('q', type=str)
         self.query_items = ''
         self.query = ''
         self.item_format = {
@@ -172,14 +150,14 @@ class BucketlistAPI(Resource):
             bucketlists_by_page = Bucketlist.query.filter_by(
                 user_id=g.current_user.user_id).order_by(
                     Bucketlist.date_modified.desc()).paginate(
-                    self.page, self.limit, error_out=True)
+                        self.page, self.limit, error_out=True)
 
         else:
             bucketlists_by_page = Bucketlist.query.filter_by(
                 user_id=g.current_user.user_id).filter(Bucketlist.name.ilike(
                     '%' + self.search_term + '%')).order_by(
                         Bucketlist.date_modified.desc()).paginate(
-                            self.page, self.limit, error_out=True)
+                         self.page, self.limit, error_out=True)
 
         if not bucketlists_by_page.items and self.search_term:
             error_response = {'error': 'Not found',
@@ -193,15 +171,12 @@ class BucketlistAPI(Resource):
         if bucketlists_by_page.has_next:
             url_next = url_for(request.endpoint, page=self.page + 1,
                                limit=self.limit, query=self.search_term)
-            # "?page=" + str(self.page + 1) +
-            # "&limit=" + str(self.limit) +
-            # self.query.format(self.query_items))
         else:
             url_next = "Null"
 
         if bucketlists_by_page.has_prev:
             url_prev = (url_for(request.endpoint) +
-
+                        "?q=" + str(self.search_term) +
                         "?page=" + str(self.page - 1) +
                         "&limit=" + str(self.limit) +
                         self.query.format(self.query_items))
@@ -209,50 +184,33 @@ class BucketlistAPI(Resource):
         else:
 
             url_prev = "Null"
-        result = flask_bucketlist.dump(list(bucketlists_by_page.items))
+        result = bucketlist_schema.dump(list(bucketlists_by_page.items))
         return {"info": {"next_page": url_next,
                          "previous_page": url_prev,
 
                          "total_pages": bucketlists_by_page.pages},
 
                 "bucketlists": result.data
-                # marshal(bucketlists_by_page.items, self.item_format)
 
-                }, 200
+               }, 200
 
-        # print(bucketlists_by_page.items)
-        # response = bucketlists_by_page
-        # response.status_code = 200
-        # return response
 
-        #bucketlists = Bucketlist.get_all()
-        # results = []
+class GetBucketlist(Resource):
+     decorators = [auth_token.login_required]
 
-        # for bucketlist in bucketlists:
-        #     bucketlist_items = BucketlistItems(
-        #         bucketlist_id=bucketlist.bucketlist_id)
-        #     if bucketlist_items is None:
-        #         item_object = 'No items yet!'
-        #     else:
-        #         item_object = {
-        #             'id': bucketlist_items.item_id,
-        #             'name': bucketlist_items.name,
-        #             'date_created': bucketlist_items.date_created,
-        #             'date_modified': bucketlist_items.date_modified,
-        #             'done': bucketlist_items.done
-        #         }
-        #     obj = {
-        #         'id': bucketlist.bucketlist_id,
-        #         'name': bucketlist.name,
-        #         'items': item_object,
-        #         'date_created': bucketlist.date_created,
-        #         'date_modified': bucketlist.date_modified
-        #     }
-        #     results.append(obj)
-        # response = jsonify(results)
-        # response.status_code = 200
-        # return response
+     def get(self, bucketlist_id):
+         bucketlists_by_page = Bucketlist.query.filter_by(
+                bucketlist_id=bucketlist_id, user_id=g.current_user.user_id).order_by(
+                    Bucketlist.date_modified.desc()).paginate(
+                        error_out=True)
 
+         if not bucketlists_by_page.items:
+            error_response = {'error': 'Not found',
+                              'message': 'No results'}, 404
+            return error_response
+         else:
+            result = bucketlist_schema.dump(list(bucketlists_by_page.items))
+            return {"bucketlist": result}, 200
 
 class BucketlistItem(Resource):
     decorators = [auth_token.login_required]
@@ -328,56 +286,56 @@ class BucketlistItem(Resource):
             return response
 
     def delete(self, bucketlist_id, item_id):
-        print(bucketlist_id, item_id)
-        self.item_id = request.form.get('item_id')
         delete_item = BucketlistItems.query.filter_by(
-            item_id=self.item_id, created_by=g.current_user.username).first()
+            item_id=item_id, created_by=g.current_user.username).first()
         if not delete_item:
             response = jsonify({'message': 'Bucketlist item does not exist!'})
             response.status_code = 404
         else:
             name = delete_item.name
             delete_item.delete()
-            return {
+            response = {
                 "message": "bucketlist item {} deleted successfully".format(name)
             }, 200
+
+        return response
 
 
 class UpdateBucketlist(Resource):
     decorators = [auth_token.login_required]
 
-    def __init__(self, userid):
-        self.bucketlist = Bucketlist.query.filter_by(user_id=userid).first()
-        super(UpdateBucketlist, self).__init__()
+    def delete(self, bucketlist_id):
+        delete_bucketlist = Bucketlist.query.filter_by(
+            bucketlist_id=bucketlist_id, created_by=g.current_user.username).first()
+        if not delete_bucketlist:
+            response = jsonify({'message': 'Bucketlist item does not exist!'})
+            response.status_code = 404
+        else:
+            name = delete_bucketlist.name
+            delete_bucketlist.delete()
+            return {
+                "message": "bucketlist item {} deleted successfully".format(name)
+            }, 200
 
-    def delete(self):
-        if not self.bucketlist:
-            # Raise an HTTPException with a 404 not found status code
-            abort(404)
-        self.bucketlist.delete()
-        return {
-            "message": "bucketlist {} deleted successfully".format(self.bucketlist.bucketlist_id)
-        }, 200
+    def put(self, bucketlist_id):
+        name = request.form.get('name')
+        if bucketlist_id:
+            edit_bucketlist = Bucketlist.query.filter_by(
+                bucketlist_id=bucketlist_id, created_by=g.current_user.username).first()
+            if name == '':
+                name = edit_bucketlist.name
+            edit_bucketlist.name = name
+            edit_bucketlist.save()
+            response = jsonify({
+                'message': 'Bucketlist Updated Successfully',
+                'id': edit_bucketlist.bucketlist_id,
+                'name': edit_bucketlist.name,
+                'date_created': edit_bucketlist.date_created,
+                'date_modified': edit_bucketlist.date_modified,
+                'created_by': edit_bucketlist.created_by
+            })
+            response.status_code = 201
 
-    def put(self):
-        name = str(request.data.get('name', ''))
-        self.bucketlist.name = name
-        self.bucketlist.save()
-        response = jsonify({
-            'id': self.bucketlist.bucketlist_id,
-            'name': self.bucketlist.name,
-            'date_created': self.bucketlist.date_created,
-            'date_modified': self.bucketlist.date_modified
-        })
-        response.status_code = 200
-        return response
+            return response
 
-    def get(self):
-        response = jsonify({
-            'id': self.bucketlist.bucketlist_id,
-            'name': self.bucketlist.name,
-            'date_created': self.bucketlist.date_created,
-            'date_modified': self.bucketlist.date_modified
-        })
-        response.status_code = 200
-        return response
+

@@ -25,5 +25,6 @@ omit =
     *flask_httpauth.py
     *jwt/*
     *uuid.py
+    *models
     *models/db/sqlalchemy_declarative.py
     

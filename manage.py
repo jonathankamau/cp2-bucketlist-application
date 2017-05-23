@@ -12,7 +12,8 @@ COV = coverage.coverage(
     include='app/*',
     omit=[
         'app/tests/*',
-        'app/config.py',
+        'app/__init__.py',
+        'app/models.py',
         'app/*/__init__.py'
     ]
 )
@@ -57,18 +58,16 @@ def cov():
 
 
 @manager.command
-def create_db():
+def create_db(dbname):
     """Creates the database."""
-    os.system('createdb bucketlist')
-    os.system('createdb bucketlist_test')
+    os.system('createdb '+dbname)
     #db.create_all()
     #db.session.commit()
 
 @manager.command
-def drop_db():
+def drop_db(dbname):
     """Drops the database."""
-    os.system('dropdb bucketlist')
-    os.system('dropdb bucketlist_test')
+    os.system('dropdb '+dbname)
 
 
 if __name__ == '__main__':

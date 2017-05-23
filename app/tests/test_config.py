@@ -17,7 +17,7 @@ class ConfigTests(unittest.TestCase):
     def test_database_uri(self):
         """ tests for db url """
         self.assertTrue(
-            self.app.config['SQLALCHEMY_DATABASE_URI'] == 'postgresql://localhost/bucketlist')
+            self.app.config['SQLALCHEMY_DATABASE_URI'] == 'postgresql://localhost/bucketlist_test')
 
     def test_flask_config(self):
         """ check for flask configuration """

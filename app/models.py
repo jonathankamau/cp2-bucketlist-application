@@ -46,39 +46,22 @@ class User(db.Model):
         db.session.add(self)
         db.session.commit()
 
-    def generate_token(self, expiration=600):
+    def generate_token(self, expiration=6000):
         serial = Serializer(os.getenv('SECRET'), expires_in=expiration)
-        return serial.dumps({'id': self.user_id})
+        return "Bearer "+serial.dumps({'id': self.user_id}).decode('utf-8')
 
     @staticmethod
-    def verify_token(self, token):
+    def verify_auth_token(token):
         serial = Serializer(os.getenv('SECRET'))
         try:
             data = serial.loads(token)
+            
         except SignatureExpired:
             return "Expired Token!" # valid token, but expired
         except BadSignature:
-            return "Invalid Token" # invalid token
+            return "Invalid Token!" # invalid token
         user = User.query.get(data['id'])
         return user
-
-class Session(db.Model):
-    """Maps to session table """
-    __tablename__ = 'sessions'
-    user_id = db.Column(db.Integer, primary_key=True)
-    token = db.Column(db.String(256))
-
-    def __init__(self, user_id, token):
-        self.user_id = user_id
-        self.token = token
-
-    def save(self):
-        db.session.add(self)
-        db.session.commit()
-
-    def delete(self):
-        db.session.delete(self)
-        db.session.commit()
 
 class Bucketlist(db.Model):
     """This class represents the bucketlist table, it maps to the table"""
@@ -87,19 +70,21 @@ class Bucketlist(db.Model):
 
     bucketlist_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255))
-    created_by = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+    created_by = db.Column(db.String(255))
     date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
     date_modified = db.Column(
         db.DateTime, default=db.func.current_timestamp(),
         onupdate=db.func.current_timestamp())
     #bucketlist_items = db.relationship('BucketlistItems', backref=db.backref('bucketlists'))
     user = db.relationship('User')
-    bucketlist_items = db.relationship('BucketlistItems', backref='items', lazy='select')
+    bucketlist_items = db.relationship('BucketlistItems', backref='items', lazy='select', order_by="desc(BucketlistItems.date_modified)")
 
-    def __init__(self, name, created_by):
+    def __init__(self, name, user_id, created_by):
         """initialize with name of bucketlist and author."""
         self.name = name
         self.created_by = created_by
+        self.user_id = user_id
 
     def save(self):
         db.session.add(self)
@@ -123,16 +108,22 @@ class BucketlistItems(db.Model):
     item_id = db.Column(db.Integer, primary_key=True)
     bucketlist_id = db.Column(db.Integer, db.ForeignKey('bucketlists.bucketlist_id'))
     name = db.Column(db.String(255))
+    description = db.Column(db.String(255))
     date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
     date_modified = db.Column(
         db.DateTime, default=db.func.current_timestamp(),
         onupdate=db.func.current_timestamp())
     done = db.Column(db.Boolean, unique=False, default=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+    created_by = db.Column(db.String(255))
 
-    def __init__(self, name, created_by):
+    def __init__(self, name, bucketlist_id, user_id, description, created_by):
         """initialize with name."""
         self.name = name
+        self.bucketlist_id = bucketlist_id
+        self.description = description
         self.created_by = created_by
+        self.user_id = user_id
 
     def save(self):
         db.session.add(self)

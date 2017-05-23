@@ -7,6 +7,7 @@ class Config(object):
     DATABASE_URL="postgresql://localhost/bucketlist"
     SECRET = os.getenv('SECRET')
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
+    JSON_SORT_KEYS = False
 
 class DevelopmentConfig(Config):
     """Configurations for Development."""

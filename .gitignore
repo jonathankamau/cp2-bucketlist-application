@@ -6,3 +6,5 @@ cover/
 instance/test_app.py
 .gitconfig
 app/helpers.py
+.env
+Library/

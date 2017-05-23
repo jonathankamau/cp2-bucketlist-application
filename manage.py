@@ -58,14 +58,17 @@ def cov():
 
 @manager.command
 def create_db():
-    """Creates the db tables."""
-    db.create_all()
-
+    """Creates the database."""
+    os.system('createdb bucketlist')
+    os.system('createdb bucketlist_test')
+    #db.create_all()
+    #db.session.commit()
 
 @manager.command
 def drop_db():
-    """Drops the db tables."""
-    db.drop_all()
+    """Drops the database."""
+    os.system('dropdb bucketlist')
+    os.system('dropdb bucketlist_test')
 
 
 if __name__ == '__main__':

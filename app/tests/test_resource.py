@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 from app import create_app, db
 from app.models import User, Bucketlist, BucketlistItems
-
+from app.resources import UserLogin
 
 
 class ResourceTests(unittest.TestCase):
@@ -19,9 +19,10 @@ class ResourceTests(unittest.TestCase):
         self.client = self.app.test_client
         self.bucketlist = {'name': 'Dance in the moonlight'}
         self.user = User
+        self.userlogin = UserLogin()
         self.bucketlists = Bucketlist
         self.bucketlistitems = BucketlistItems
-        self.register_data = {'firstname':'John',
+        self.register_data = {'firstname': 'John',
                               'lastname': 'Kamau',
                               'username': 'kamjon',
                               'password': 'kamjon123'
@@ -39,7 +40,8 @@ class ResourceTests(unittest.TestCase):
         response = self.client().post('/bucketlist_api/v1.0/auth/register',
                                       data=self.register_data)
         self.assertEqual(response.status_code, 200)
-        self.assertIn('You have registered successfully', str(response.data))
+        self.assertIn('You have registered successfully',
+                      str(response.data), msg="Not registered")
 
     def test_bucketlist_can_login_user(self):
         """ Test if the API can log in a user"""
@@ -50,59 +52,73 @@ class ResourceTests(unittest.TestCase):
                                             data=self.login_data)
         self.assertEqual(login_response.status_code, 200)
         self.assertIn('You have logged in successfully',
-                      str(login_response.data))
+                      str(login_response.data), msg="Not logged in")
 
     def test_bucketlist_creation(self):
         """Test if API can create a bucketlist (POST request)"""
         response = self.client().post(
             '/bucketlist_api/v1.0/bucketlists/', data=self.bucketlist)
         self.assertEqual(response.status_code, 201)
-        self.assertIn('Dance in the moonlight', str(response.data))
+        self.assertIn('Dance in the moonlight', str(
+            response.data), msg="Bucketlist not created")
 
-    def test_api_can_get_all_bucketlists(self):
-        """Test if API can get a bucketlist (GET request)."""
-        res = self.client().post('/bucketlist_api/v1.0/bucketlists/', data=self.bucketlist)
-        self.assertEqual(res.status_code, 201)
-        res = self.client().get('/bucketlist_api/v1.0/bucketlists/')
-        self.assertEqual(res.status_code, 200)
-        self.assertIn('Dance in the moonlight', str(res.data))
+    def test_api_get_all_bucketlists(self):
+        """Test if API can get all bucketlists for the user (GET request)."""
+        registration_response = self.client().post('/bucketlist_api/v1.0/auth/register',
+                                                   data=self.register_data)
+        self.assertEqual(registration_response.status_code, 200)
+        login_response = self.client().post('/bucketlist_api/v1.0/auth/login',
+                                            data=self.login_data)
+        self.assertEqual(login_response.status_code, 200)
+        response = self.client().post(
+            '/bucketlist_api/v1.0/bucketlists/', data=self.bucketlist)
+        self.assertEqual(response.status_code, 201)
+        response = self.client().get('/bucketlist_api/v1.0/bucketlists/')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Dance in the moonlight', str(
+            response.data), msg="Bucketlist not retrieved")
 
-    def test_api_can_get_bucketlist_by_id(self):
+    def test_api_get_bucketlist_by_id(self):
         """Test API can get a single bucketlist by using it's id."""
-        rv = self.client().post('/bucketlist_api/v1.0/bucketlists/', data=self.bucketlist)
-        self.assertEqual(rv.status_code, 201)
-        result_in_json = json.loads(rv.data.decode('utf-8').replace("'", "\""))
+        response = self.client().post(
+            '/bucketlist_api/v1.0/bucketlists/', data=self.bucketlist)
+        self.assertEqual(response.status_code, 201)
+        result_in_json = json.loads(
+            response.data.decode('utf-8').replace("'", "\""))
         result = self.client().get(
             '/bucketlist_api/v1.0/bucketlists/{}'.format(result_in_json['id']))
         self.assertEqual(result.status_code, 200)
-        self.assertIn('Dance in the moonlight', str(result.data))
+        self.assertIn('Dance in the moonlight', str(result.data),
+                      msg="Could not retrieve bucketlist")
 
     def test_bucketlist_can_be_edited(self):
         """Test API can edit an existing bucketlist. (PUT request)"""
-        rv = self.client().post(
+        response = self.client().post(
             '/bucketlist_api/v1.0/bucketlists/',
             data={'name': 'Go to mars'})
-        self.assertEqual(rv.status_code, 201)
-        rv = self.client().put(
+        self.assertEqual(response.status_code, 201)
+        response = self.client().put(
             '/bucketlists/1',
             data={
                 "name": "Go to mars and meet aliens!"
             })
-        self.assertEqual(rv.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         results = self.client().get('/bucketlist_api/v1.0/bucketlists/1')
-        self.assertIn('meet aliens!', str(results.data))
+        self.assertIn('meet aliens!', str(results.data),
+                      msg="Bucketlist could not be edited")
 
     def test_bucketlist_deletion(self):
         """Test API can delete an existing bucketlist. (DELETE request)."""
-        rv = self.client().post(
+        response = self.client().post(
             '/bucketlist_api/v1.0/bucketlists/',
             data={'name': 'Go to mars'})
-        self.assertEqual(rv.status_code, 201)
+        self.assertEqual(response.status_code, 201)
         res = self.client().delete('/bucketlist_api/v1.0/bucketlists/1')
         self.assertEqual(res.status_code, 200)
         # Test to see if it exists, should return a 404
         result = self.client().get('/bucketlist_api/v1.0/bucketlists/1')
-        self.assertEqual(result.status_code, 404)
+        self.assertEqual(result.status_code, 404,
+                         msg="bucketlist still exists")
 
     def test_generate_token(self):
         """ tests if the API can generate a token for the user """
@@ -112,7 +128,8 @@ class ResourceTests(unittest.TestCase):
         login_response = self.client().post('/bucketlist_api/v1.0/auth/login',
                                             data=self.login_data)
         self.assertEqual(login_response.status_code, 200)
-        self.assertIn('token', str(login_response.data), msg='token not generated!')
+        self.assertIn('token', str(login_response.data),
+                      msg='token not generated!')
 
     def test_get_password(self):
         """ tests the method get_password if it fetches the users password from db """
@@ -151,22 +168,34 @@ class ResourceTests(unittest.TestCase):
                 'lastname': 'Kamau',
                 'username': 'kamjon',
                 'password': 'kamjon123'
-               }
+                }
         self.client().post('/bucketlist_api/v1.0/auth/register', data=data)
         password = 'kamjon123'
         self.client().post('/bucketlist_api/v1.0/auth/login',
                            data={'username': 'kamjon',
                                  'password': password
-                                })
+                                 })
         response = check_password_hash(data['password'], password)
         self.assertTrue(response, msg="Passwords don't match")
+
+    def test_invalid_token(self):
+        """ checks if the token is invalid """
+        registration_response = self.client().post('/bucketlist_api/v1.0/auth/register',
+                                                   data=self.register_data)
+        self.assertEqual(registration_response.status_code, 200)
+        login_response = self.client().post('/bucketlist_api/v1.0/auth/login',
+                                            data=self.login_data)
+        self.assertEqual(login_response.status_code, 200)
+
+        token_response = self.userlogin.verify_token(str(login_response.data))
+        self.assertEqual("Invalid Token", token_response, msg="Not Invalid")
 
     def test_empty_username_or_password(self):
         """ tests if username or password is empty """
         response = self.client().post('/bucketlist_api/v1.0/auth/login',
                                       data={'username': '',
                                             'password': ''
-                                           })
+                                            })
 
         self.assertIn("The following fields cannot be empty",
                       str(response.data), msg="Error message not given")

@@ -21,14 +21,14 @@ class ConfigTests(unittest.TestCase):
 
     def test_flask_config(self):
         """ check for flask configuration """
-        self.assertTrue(self.app.config['FLASK_CONFIG'] == 'testing')
+        self.assertTrue(self.app.config['FLASK_CONFIG'] == 'testing', msg="Does not exist")
 
     def test_secret_key(self):
         """ tests for secret key, if it exists """
-        self.assertTrue(self.app.config['SECRET'] == 'aping&zk4&6&k8o5s9')
+        self.assertTrue(self.app.config['SECRET'] == 'aping&zk4&6&k8o5s9', msg="Does not exist")
 
     def test_sqlalchemy_track_modifications(self):
         """ tests if sqlalchemy track modifications is false """
         self.assertTrue(
-            self.app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] is False)
+            self.app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] is False, msg="Does not exist")
     

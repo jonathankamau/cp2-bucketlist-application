@@ -1,1 +1,0 @@
-import resource_tests.test_resource

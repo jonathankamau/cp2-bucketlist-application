@@ -10,7 +10,7 @@ from itsdangerous import (TimedJSONWebSignatureSerializer
 class User(db.Model):
     """ User Model for storing user related details """
     __tablename__ = "users"
-
+    # database fields
     user_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     firstname = db.Column(db.String(255), nullable=False)
     lastname = db.Column(db.String(255), nullable=False)
@@ -20,6 +20,7 @@ class User(db.Model):
     bucketlists = db.relationship('Bucketlist', order_by='Bucketlist.bucketlist_id')
 
     def __init__(self, firstname, lastname, username, password):
+        """ initialize the model fields """
         self.firstname = firstname
         self.lastname = lastname
         self.username = username
@@ -28,21 +29,23 @@ class User(db.Model):
 
     @property
     def get_password(self):
+        """ retrieves the password """
         return self.password
 
     @property
     def get_id(self):
+        """ retrieves the user id """
         return self.user_id
-    
-    # def set_password(self, password):
-    #     self.password = generate_password_hash(password)
+
 
     def check_password(self, password):
+        """ upon login, checks if the password given is same as that in the database """
         if check_password_hash(self.password, password):
             return True
         return False
 
     def save(self):
+        """ saves the user details to the database """
         db.session.add(self)
         db.session.commit()
 

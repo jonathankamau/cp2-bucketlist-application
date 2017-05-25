@@ -63,6 +63,7 @@ This API enables the user to create bucketlist and list of items in the bucketli
 
        	$ python manage.py runserver 
           Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+	  and it is also accessible online on https://jk-bucketlist.herokuapp.com
          
     The API server is accessible on `http://127.0.0.1:5000/` 
 ### Sample API Use Case

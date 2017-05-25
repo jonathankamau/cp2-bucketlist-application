@@ -19,7 +19,7 @@ def create_app(config_name):
     from app.models import User, Bucketlist, BucketlistItems
     from app.resources import (RegisterUser, UserLogin,
                                BucketlistAPI, BucketlistItem,
-                               GetBucketlistItem, GetBucketlist, UpdateBucketlist)
+                               GetUpdateBucketlistItem, GetBucketlist, UpdateBucketlist)
 
     app = FlaskAPI(__name__, instance_relative_config=True)
     app.config.from_object(bucketlist_config[config_name])
@@ -47,12 +47,9 @@ def create_app(config_name):
     api.add_resource(
         BucketlistItem, '/bucketlists/<int:bucketlist_id>/items/', endpoint='items')
     api.add_resource(
-        BucketlistItem, '/bucketlists/<int:bucketlist_id>/items/<int:item_id>',
-        endpoint='edit-items')
-    api.add_resource(
         UpdateBucketlist, '/bucketlists/<int:bucketlist_id>', endpoint='update')
     api.add_resource(
-        GetBucketlistItem, '/bucketlists/<int:bucketlist_id>/items/<int:item_id>/',
+        GetUpdateBucketlistItem, '/bucketlists/<int:bucketlist_id>/items/<int:item_id>',
         endpoint='item-search')
 
     app.register_blueprint(api_blueprint, url_prefix='/bucketlist_api/v1.0')

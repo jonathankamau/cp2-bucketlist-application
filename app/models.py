@@ -58,7 +58,7 @@ class User(db.Model):
         serial = Serializer(os.getenv('SECRET'))
         try:
             data = serial.loads(token)
-            
+
         except SignatureExpired:
             return "Expired Token!" # valid token, but expired
         except BadSignature:
@@ -79,7 +79,6 @@ class Bucketlist(db.Model):
     date_modified = db.Column(
         db.DateTime, default=db.func.current_timestamp(),
         onupdate=db.func.current_timestamp())
-    #bucketlist_items = db.relationship('BucketlistItems', backref=db.backref('bucketlists'))
     user = db.relationship('User')
     bucketlist_items = db.relationship('BucketlistItems', backref='items', lazy='select', order_by="desc(BucketlistItems.date_modified)")
 

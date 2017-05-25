@@ -15,6 +15,15 @@ omit =
     *psycopg2/*
     *html/*
     *http/*
+    *aniso8601*
+    *flask_marshmallow*
+    *marshmallow*
+    *pytz*
+    bucketlist.py
+    bucketlist/app.py
+    bucketlist/app/authenticate_token.py
+    bucketlist/instance.py
+    *dateutil*
     *decimal.py
     *numbers.py
     *pydoc.py

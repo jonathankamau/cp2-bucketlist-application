@@ -117,7 +117,7 @@ class ResourceTests(unittest.TestCase):
                                    headers={'Authorization': self.token})
         self.assertEqual(res.status_code, 200)
         # Test to see if it exists, should return a 404
-        result = self.client().get('/bucketlist_api/v1.0/bucketlists/1',
+        result = self.client().get('/bucketlist_api/v1.0/bucketlists/1/',
                                    headers={'Authorization': self.token})
         self.assertEqual(result.status_code, 404,
                          msg="bucketlist still exists")
@@ -255,10 +255,8 @@ class ResourceTests(unittest.TestCase):
                                                data=self.bucketlist_item,
                                                headers={'Authorization': self.token})
         self.assertEqual(item_reg_response.status_code, 201)
-        print('item REGISTRATION: '+str(item_reg_response.data))
-        result = self.client().get('/bucketlist_api/v1.0/bucketlists/1/items/1/',
+        result = self.client().get('/bucketlist_api/v1.0/bucketlists/1/items/1',
                                    headers={'Authorization': self.token})
-        print('get ITEM: '+str(result.data))
         self.assertEqual(result.status_code, 200)
         self.assertIn('sing in the moonlight', str(result.data),
                       msg="Could not retrieve bucketlist item")

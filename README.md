@@ -2,7 +2,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/e002026263b1406f842a68886b81577e)](https://www.codacy.com/app/jonathankamau/cp2-bucketlist-application?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=jonathankamau/cp2-bucketlist-application&amp;utm_campaign=Badge_Grade)
 [![Codacy Badge](https://api.codacy.com/project/badge/Coverage/e002026263b1406f842a68886b81577e)](https://www.codacy.com/app/jonathankamau/cp2-bucketlist-application?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=jonathankamau/cp2-bucketlist-application&amp;utm_campaign=Badge_Grade)
-https://circleci.com/gh/:jonathankamau/:cp2-bucketlist-application/tree/:development.svg?style=shield&circle-token=:circle-token
+https://circleci.com/gh/jonathankamau/cp2-bucketlist-application/tree/development.svg?style=shield&circle-token=51bfa19ac63ea6e9c476ed22b04b5b44f8b5e069
 
 
 This API enables the user to create bucketlist and list of items in the bucketlist. The items can be marked as `done` when completed.

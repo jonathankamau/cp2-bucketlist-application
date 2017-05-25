@@ -19,7 +19,6 @@ COV = coverage.coverage(
 )
 COV.start()
 
-
 app = create_app(config_name=os.getenv('APP_SETTINGS'))
 migrate = Migrate(app, db)
 manager = Manager(app)
@@ -31,17 +30,18 @@ manager.add_command('db', MigrateCommand)
 @manager.command
 def test():
     """Runs the unit tests without test coverage."""
-    tests = unittest.TestLoader().discover('app/tests', pattern='test*.py')
+    tests = unittest.TestLoader().discover('tests', pattern='test*.py')
     result = unittest.TextTestRunner(verbosity=2).run(tests)
     if result.wasSuccessful():
         return 0
     return 1
+    
 
 
 @manager.command
 def cov():
     """Runs the unit tests with coverage."""
-    tests = unittest.TestLoader().discover('app/tests')
+    tests = unittest.TestLoader().discover('tests')
     result = unittest.TextTestRunner(verbosity=2).run(tests)
     if result.wasSuccessful():
         COV.stop()

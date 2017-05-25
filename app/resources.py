@@ -12,8 +12,8 @@ from app.authenticate_token import auth_token
 from itsdangerous import (TimedJSONWebSignatureSerializer
                           as Serializer, BadSignature, SignatureExpired)
 
-from app.models import User, Bucketlist, BucketlistItems
-from app.schemas import reg_schema, user_login, bucketlist_schema
+from app.models import (User, Bucketlist, BucketlistItems)
+from app.schemas import (reg_schema, bucketlist_schema, bucketlist_items)
 
 # initialize the database
 db = SQLAlchemy()
@@ -59,24 +59,25 @@ class RegisterUser(Resource):
         result_user = User.query.filter_by(username=username).first()
         db.session.remove()
         if result_user is not None:
-            resp = "User already exists!"
+            response = {"error":"User already exists!"}, 409
+
         else:
            # appends the result to its corresponding schema
             result, errors = reg_schema.load(items)
             # captures errors if any
             if errors:
 
-                resp = {'errors': errors}
+                response = {'errors': errors}
             else:
                 # saves the user details to the database
                 user = User(username=username, firstname=firstname,
                             lastname=lastname, password=password)
                 user.save()
                 # gives the return
-                resp = {'response': 'You have registered successfully',
-                        'result': result}
+                response = {'response': 'You have registered successfully',
+                            'result': result}, 201
 
-        return resp
+        return response
 
 
 class UserLogin(Resource):
@@ -113,7 +114,7 @@ class UserLogin(Resource):
             if value == '':
                 result.append(key)
         if len(result) > 1:
-            resp = ' '.join(result)
+            response = ' '.join(result)
         else:
             # checks for the user in the database
             result_user = User.query.filter_by(username=username).first()
@@ -122,14 +123,14 @@ class UserLogin(Resource):
                 # generates the token for the user
                 token = result_user.generate_token()
                 # gives message response
-                resp = {'token': token,
-                        'message': "You have logged in successfully"}, 200
+                response = {'token': token,
+                            'message': "You have logged in successfully"}, 200
 
             else:
                 # message that is returned if user could not be logged in
-                resp = "Could not log you in! Check your username and password and try again!"
+                response = "Could not log you in! Check your username and password and try again!"
 
-        return resp
+        return response
 
 
 class BucketlistAPI(Resource):
@@ -143,7 +144,7 @@ class BucketlistAPI(Resource):
         self.page = request.args.get('page', 1, type=int)
         self.max_limit = 100
         # sets the minimum limit per page
-        self.request_limit = request.args.get('limit', 2, type=int)
+        self.request_limit = request.args.get('limit', 20, type=int)
         self.limit = min(self.request_limit, self.max_limit)
         # gets the search term
         self.search_term = request.args.get('q', type=str)
@@ -188,7 +189,7 @@ class BucketlistAPI(Resource):
             bucketlists_by_page = Bucketlist.query.filter_by(
                 user_id=g.current_user.user_id).order_by(
                     Bucketlist.date_modified.desc()).paginate(
-                        self.page, self.limit, error_out=True)
+                        self.page, self.limit, error_out=False)
 
         else:
             # if a search term has been given
@@ -197,7 +198,7 @@ class BucketlistAPI(Resource):
                 user_id=g.current_user.user_id).filter(Bucketlist.name.ilike(
                     '%' + self.search_term + '%')).order_by(
                         Bucketlist.date_modified.desc()).paginate(
-                            self.page, self.limit, error_out=True)
+                            self.page, self.limit, error_out=False)
 
         # if no bucketlists have been found and search term has been provided
         if not bucketlists_by_page.items and self.search_term:
@@ -219,21 +220,36 @@ class BucketlistAPI(Resource):
         if bucketlists_by_page.has_next:
             url_next = url_for(request.endpoint, page=self.page + 1,
                                limit=self.limit, query=self.search_term)
+
         else:
             # if there isn't a next page
             url_next = "Null"
 
-        # checks if there is a previous page of bucketlists
-        if bucketlists_by_page.has_prev:
-            url_prev = (url_for(request.endpoint) +
-                        "?q=" + str(self.search_term) +
-                        "?page=" + str(self.page - 1) +
-                        "&limit=" + str(self.limit) +
-                        self.query.format(self.query_items))
 
+
+        # checks if there is a previous page of bucketlists
+        if self.search_term is None:
+            if bucketlists_by_page.has_prev:
+                url_prev = (url_for(request.endpoint) +
+                            "?page=" + str(self.page - 1) +
+                            "&limit=" + str(self.limit) +
+                            self.query.format(self.query_items))
+
+            else:
+                # if there isn't a previous page
+                url_prev = "Null"
         else:
-            # if there isn't a previous page
-            url_prev = "Null"
+
+            if bucketlists_by_page.has_prev:
+                url_prev = (url_for(request.endpoint) +
+                            "?q=" + str(self.search_term) +
+                            "?page=" + str(self.page - 1) +
+                            "&limit=" + str(self.limit) +
+                            self.query.format(self.query_items))
+
+            else:
+                # if there isn't a previous page
+                url_prev = "Null"
 
         # appends the result to its corresponding schema
         result = bucketlist_schema.dump(list(bucketlists_by_page.items))
@@ -246,7 +262,7 @@ class BucketlistAPI(Resource):
 
                 "bucketlists": result.data
 
-                }, 200
+               }, 200
 
 
 class GetBucketlist(Resource):
@@ -275,6 +291,43 @@ class GetBucketlist(Resource):
             result = bucketlist_schema.dump(list(bucketlists_by_page.items))
         return {"bucketlist": result}, 200
 
+class GetBucketlistItem(Resource):
+    """ allows the user to retrieve a particular bucketlist by using its id """
+
+    # sets authentication for the resource, requires user to be logged in and
+    # token given
+    decorators = [auth_token.login_required]
+
+    def get(self, bucketlist_id, item_id):
+        """ allows the user to retrieve the bucketlist by its id using get """
+
+        # check if the bucketlist exists
+        bucketlist = Bucketlist.query.filter_by(
+            bucketlist_id=bucketlist_id, created_by=g.current_user.username).first()
+
+        if not bucketlist:
+
+            # Raise an HTTPException with a 404 not found status code
+            response = jsonify({'message': 'Bucketlist does not exist!'})
+            response.status_code = 404
+
+        # gets the bucketlist and its items and arranges it by pages
+        bucketlists_items_by_page = BucketlistItems.query.filter_by(
+            bucketlist_id=bucketlist_id, item_id=item_id, user_id=g.current_user.user_id).order_by(
+                BucketlistItems.date_modified.desc()).paginate(
+                    error_out=True)
+        print(bucketlists_items_by_page.items)
+        # if no bucketlists are found, an error message should be given
+        if not bucketlists_items_by_page.items:
+            error_response = {'error': 'Not found',
+                              'message': 'No results'}, 404
+            return error_response
+        else:
+            # attaches the result to its corresponding schema and returns it
+            result = bucketlist_items.dump(list(bucketlists_items_by_page.items))
+            print(result)
+        return {"bucketlist Items": result}, 200
+
 
 class BucketlistItem(Resource):
     """ class resource that allows the user to create, edit and delete a bucketlist item """
@@ -290,9 +343,9 @@ class BucketlistItem(Resource):
         description = request.form.get('description')
 
         # check if the bucketlist exists
-        self.bucketlist = Bucketlist.query.filter_by(
+        bucketlist = Bucketlist.query.filter_by(
             bucketlist_id=bucketlist_id, created_by=g.current_user.username).first()
-        if not self.bucketlist:
+        if not bucketlist:
 
             # Raise an HTTPException with a 404 not found status code
             response = jsonify({'message': 'Bucketlist does not exist!'})
@@ -301,10 +354,10 @@ class BucketlistItem(Resource):
             name = str(request.data.get('name', ''))
             if name:
                 # stores the bucketlist item details in the database
-                bucketlist_items = BucketlistItems(
+                bucketlist_save_items = BucketlistItems(
                     name=name, bucketlist_id=bucketlist_id, description=description,
                     user_id=g.current_user.user_id, created_by=g.current_user.username)
-                bucketlist_items.save()
+                bucketlist_save_items.save()
 
                 # get the saved bucketlist item to set as output
                 bucketlist_created_item = BucketlistItems.query.filter_by(
@@ -325,6 +378,102 @@ class BucketlistItem(Resource):
 
         return response
 
+    def get(self, bucketlist_id):
+        """ get method that retrieves bucketlist items and sets them in pages """
+
+        # gets number of pages
+        page = request.args.get('page', 1, type=int)
+        max_limit = 100
+        # sets the minimum limit per page
+        request_limit = request.args.get('limit', 20, type=int)
+        limit = min(request_limit, max_limit)
+        # gets the search term
+        search_term = request.args.get('q', type=str)
+        query_items = ''
+        query = ''
+
+        if not search_term:
+            # if no search term has been given
+            # retrieves bucketlists items as pages
+            bucketlist_items_by_page = BucketlistItems.query.filter_by(
+                bucketlist_id=bucketlist_id, user_id=g.current_user.user_id).order_by(
+                    BucketlistItems.date_modified.desc()).paginate(
+                        page, limit, error_out=False)
+
+        else:
+            # if a search term has been given
+            # retrieves bucketlists items as pages
+            bucketlist_items_by_page = Bucketlist.query.filter_by(
+                bucketlist_id=bucketlist_id, user_id=g.current_user.user_id).filter
+            (Bucketlist.name.ilike(
+                '%' + search_term + '%')).order_by(
+                    Bucketlist.date_modified.desc()).paginate(
+                        page, limit, error_out=False)
+
+        # if no bucketlists items have been found and search term has been provided
+        if not bucketlist_items_by_page.items and search_term:
+            error_response = {'error': 'Not found',
+                              'message': 'No results'}, 404
+
+            # return the error response with its status code
+            return error_response
+
+        # if no bucketlist items have been found
+        if not bucketlist_items_by_page.items:
+            error_response = {'error': 'Not found',
+                              'message': 'No bucketlist items have been added'}, 404
+
+            # return the error response with its status code
+            return error_response
+
+        # checks if there's a next page of bucketlist items
+        if bucketlist_items_by_page.has_next:
+            url_next = url_for(request.endpoint, page=page + 1,
+                               limit=limit, query=search_term)
+
+        else:
+            # if there isn't a next page
+            url_next = "Null"
+
+
+
+        # checks if there is a previous page of bucketlist items
+        if search_term is None:
+            if bucketlist_items_by_page.has_prev:
+                url_prev = (url_for(request.endpoint) +
+                            "?page=" + str(page - 1) +
+                            "&limit=" + str(limit) +
+                            query.format(query_items))
+
+            else:
+                # if there isn't a previous page
+                url_prev = "Null"
+        else:
+
+            if bucketlist_items_by_page.has_prev:
+                url_prev = (url_for(request.endpoint) +
+                            "?q=" + str(search_term) +
+                            "?page=" + str(page - 1) +
+                            "&limit=" + str(limit) +
+                            query.format(query_items))
+
+            else:
+                # if there isn't a previous page
+                url_prev = "Null"
+
+        # appends the result to its corresponding schema
+        result = bucketlist_items.dump(list(bucketlist_items_by_page.items))
+
+        # returns the result with its status code
+        return {"info": {"next_page": url_next,
+                         "previous_page": url_prev,
+
+                         "total_pages": bucketlist_items_by_page.pages},
+
+                "bucketlists": result.data
+
+               }, 200
+
     def put(self, bucketlist_id, item_id):
         """ allows the user to edit the bucketlist item using put method """
 
@@ -342,15 +491,15 @@ class BucketlistItem(Resource):
                 created_by=g.current_user.username).first()
 
             # if name remains unchanged, revert to the default one
-            if name == '':
+            if not name:
                 name = edit_item.name
 
             # if description remains unchanged, revert to the default one
-            if description == '':
+            if not description:
                 description = edit_item.description
 
             # if done field remains unchanged, revert to the default one
-            if done == '':
+            if not done:
                 done = edit_item.done
 
             # attach the items to the query
@@ -372,11 +521,11 @@ class BucketlistItem(Resource):
                 'done': edit_item.done,
                 'created_by': edit_item.created_by
             })
-            response.status_code = 201
+            response.status_code = 200
 
             return response
 
-    def delete(self, bucketlist_id, item_id):
+    def delete(self, item_id):
         """ deletes the bucketlist item """
 
         # gets the bucketlist item from the database by using its id given
@@ -402,7 +551,7 @@ class BucketlistItem(Resource):
 
 
 class UpdateBucketlist(Resource):
-    """ class resource that allows the user to edit and delete a bucketlist """ 
+    """ class resource that allows the user to edit and delete a bucketlist """
     # sets authentication for the resource, requires user to be logged in and
     # token given
     decorators = [auth_token.login_required]
@@ -458,6 +607,6 @@ class UpdateBucketlist(Resource):
                 'date_modified': edit_bucketlist.date_modified,
                 'created_by': edit_bucketlist.created_by
             })
-            response.status_code = 201
+            response.status_code = 200
 
             return response

@@ -291,7 +291,7 @@ class GetBucketlist(Resource):
             result = bucketlist_schema.dump(list(bucketlists_by_page.items))
         return {"bucketlist": result}, 200
 
-class GetBucketlistItem(Resource):
+class GetUpdateBucketlistItem(Resource):
     """ allows the user to retrieve a particular bucketlist by using its id """
 
     # sets authentication for the resource, requires user to be logged in and
@@ -327,6 +327,81 @@ class GetBucketlistItem(Resource):
             result = bucketlist_items.dump(list(bucketlists_items_by_page.items))
             print(result)
         return {"bucketlist Items": result}, 200
+
+    def put(self, bucketlist_id, item_id):
+        """ allows the user to edit the bucketlist item using put method """
+
+        # get the bucketlist item details
+        name = request.form.get('name')
+        description = request.form.get('description')
+        done = request.form.get('done')
+
+        # if item id has been given
+        if item_id:
+
+            # retrieve the bucketlist item from the database by its id
+            edit_item = BucketlistItems.query.filter_by(
+                item_id=item_id, bucketlist_id=bucketlist_id,
+                created_by=g.current_user.username).first()
+
+            # if name remains unchanged, revert to the default one
+            if not name:
+                name = edit_item.name
+
+            # if description remains unchanged, revert to the default one
+            if not description:
+                description = edit_item.description
+
+            # if done field remains unchanged, revert to the default one
+            if not done:
+                done = edit_item.done
+
+            # attach the items to the query
+            edit_item.name = name
+            edit_item.description = description
+            edit_item.done = done
+
+            # saves the items
+            edit_item.save()
+
+            # gives the response in json format with the status code
+            response = jsonify({
+                'message': 'Bucketlist Item Updated Successfully',
+                'id': edit_item.item_id,
+                'name': edit_item.name,
+                'description': edit_item.description,
+                'date_created': edit_item.date_created,
+                'date_modified': edit_item.date_modified,
+                'done': edit_item.done,
+                'created_by': edit_item.created_by
+            })
+            response.status_code = 200
+
+            return response
+
+    def delete(self, bucketlist_id, item_id):
+        """ deletes the bucketlist item """
+
+        # gets the bucketlist item from the database by using its id given
+        delete_item = BucketlistItems.query.filter_by(
+            item_id=item_id, bucketlist_id=bucketlist_id, created_by=g.current_user.username).first()
+
+        # message that is returned if the bucketlist item does not exist
+        # returns with status code
+        if not delete_item:
+            response = jsonify({'message': 'Bucketlist item does not exist!'})
+            response.status_code = 404
+        else:
+            # captures the name of the deleted bucketlist item
+            name = delete_item.name
+            # deletes the item
+            delete_item.delete()
+            # returns the message that the particular item was deleted successfully
+            response = {
+                "message": "bucketlist item {} deleted successfully".format(name)
+            }, 200
+
+        return response
 
 
 class BucketlistItem(Resource):
@@ -474,80 +549,7 @@ class BucketlistItem(Resource):
 
                }, 200
 
-    def put(self, bucketlist_id, item_id):
-        """ allows the user to edit the bucketlist item using put method """
-
-        # get the bucketlist item details
-        name = request.form.get('name')
-        description = request.form.get('description')
-        done = request.form.get('done')
-
-        # if item id has been given
-        if item_id:
-
-            # retrieve the bucketlist item from the database by its id
-            edit_item = BucketlistItems.query.filter_by(
-                item_id=item_id, bucketlist_id=bucketlist_id,
-                created_by=g.current_user.username).first()
-
-            # if name remains unchanged, revert to the default one
-            if not name:
-                name = edit_item.name
-
-            # if description remains unchanged, revert to the default one
-            if not description:
-                description = edit_item.description
-
-            # if done field remains unchanged, revert to the default one
-            if not done:
-                done = edit_item.done
-
-            # attach the items to the query
-            edit_item.name = name
-            edit_item.description = description
-            edit_item.done = done
-
-            # saves the items
-            edit_item.save()
-
-            # gives the response in json format with the status code
-            response = jsonify({
-                'message': 'Bucketlist Item Updated Successfully',
-                'id': edit_item.item_id,
-                'name': edit_item.name,
-                'description': edit_item.description,
-                'date_created': edit_item.date_created,
-                'date_modified': edit_item.date_modified,
-                'done': edit_item.done,
-                'created_by': edit_item.created_by
-            })
-            response.status_code = 200
-
-            return response
-
-    def delete(self, item_id):
-        """ deletes the bucketlist item """
-
-        # gets the bucketlist item from the database by using its id given
-        delete_item = BucketlistItems.query.filter_by(
-            item_id=item_id, created_by=g.current_user.username).first()
-
-        # message that is returned if the bucketlist item does not exist
-        # returns with status code
-        if not delete_item:
-            response = jsonify({'message': 'Bucketlist item does not exist!'})
-            response.status_code = 404
-        else:
-            # captures the name of the deleted bucketlist item
-            name = delete_item.name
-            # deletes the item
-            delete_item.delete()
-            # returns the message that the particular item was deleted successfully
-            response = {
-                "message": "bucketlist item {} deleted successfully".format(name)
-            }, 200
-
-        return response
+    
 
 
 class UpdateBucketlist(Resource):

@@ -78,7 +78,21 @@ This API enables the user to create bucketlist and list of items in the bucketli
 
 ![Register](https://cloud.githubusercontent.com/assets/26286275/26498848/1e0a7b66-4239-11e7-9e91-7515869032bc.png)
 
-	 
+2. Login the user
+![Login](https://cloud.githubusercontent.com/assets/26286275/26499067/e8cca36a-4239-11e7-80ab-b07277ee5733.png)
+
+3. Create a bucketlist
+![Create A Bucketlist](https://cloud.githubusercontent.com/assets/26286275/26499805/922dba78-423c-11e7-84eb-3cc8abfd3f1f.png)
+
+4. Get all bucketlists
+![Get Bucketlists](https://cloud.githubusercontent.com/assets/26286275/26499814/98ac6728-423c-11e7-860d-63fc5de57fbe.png)
+
+5. Get a bucketlist
+![Get a bucketlist](https://cloud.githubusercontent.com/assets/26286275/26500073/595eb674-423d-11e7-8468-6900a80af5d5.png)
+
+6. Create a bucketlist item
+![Create Bucketlist Item](https://cloud.githubusercontent.com/assets/26286275/26500441/a0e81fa2-423e-11e7-9ceb-08b9c2a61cf4.png)
+
     The API server is accessible on `http://127.0.0.1:5000/`
     and it is also accessible online on https://jk-bucketlist.herokuapp.com
     

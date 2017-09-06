@@ -1,0 +1,22 @@
+machine:
+  python:
+    version: 3.6.1
+  environment:
+    FLASK_APP: run.py
+    SECRET: aping&zk4&6&k8o5s9
+    APP_SETTINGS: development
+    DATABASE_URL: postgresql://localhost/bucketlist
+    
+dependencies:
+  post:
+    - pip install -r requirements.txt
+
+test:
+  override:
+    - createdb bucketlist;
+    - createdb bucketlist_test;
+    - rm -rf migrations
+    - python manage.py db init
+    - python manage.py db migrate
+    - python manage.py db upgrade
+    - nosetests -v
